@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PGSClassMap</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main>
+    <h1>PGSClassMap</h1>
+    <p>S1 Class Allocation & Transition Planning</p>
+
+    <section class="card">
+      <h2>Upload Pupil List</h2>
+      <input type="file" id="pupilFile" accept=".xlsx,.xls">
+      <button onclick="validateFile()">Validate File</button>
+    </section>
+
+    <section class="card">
+      <h2>Validation Result</h2>
+      <pre id="result">No file validated yet.</pre>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
