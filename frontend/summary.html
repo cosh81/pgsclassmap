@@ -413,30 +413,47 @@
         if (!t) return "—";
         return Math.round((male/t)*100) + "% / " + Math.round((female/t)*100) + "%";
       }
+      function classIsland(className) {
+        return String(className || "").replace(/[0-9]/g, "") || "—";
+      }
+      function hasSiblingIsland(row) {
+        return row.siblingIsland && row.siblingIsland !== "—";
+      }
 
       /* ── Totals ───────────────────────────────────────────── */
       let totPupils = 0, totMale = 0, totFemale = 0;
       let totSiblings = 0, totFriendOk = 0, totFriendNo = 0, totNone = 0;
-      classNames.forEach(cn => {
-  const d = summary[cn];
-  const f = friendshipSummary[cn] || {};
 
-  totPupils   += d.total  || 0;
-  totMale     += d.male   || 0;
-  totFemale   += d.female || 0;
-  totSiblings += d.siblingPupils || 0;
-  totFriendOk += f.friendsOk    || 0;
-  totFriendNo += f.friendsNo    || 0;
-  totNone     += f.noneListed   || 0;
-});
+      const siblingByClass = {};
+      allocations.forEach(row => {
+        if (hasSiblingIsland(row)) {
+          totSiblings++;
+          siblingByClass[row.class] = (siblingByClass[row.class] || 0) + 1;
+        }
+      });
+
+      classNames.forEach(cn => {
+        const d = summary[cn];
+        const f = friendshipSummary[cn] || {};
+
+        totPupils   += d.total  || 0;
+        totMale     += d.male   || 0;
+        totFemale   += d.female || 0;
+        totFriendOk += f.friendsOk || 0;
+        totFriendNo += f.friendsNo || 0;
+        totNone     += f.noneListed || 0;
+      });
+
       const totWithFriends = totFriendOk + totFriendNo;
       const overallPct = pct(totFriendOk, totWithFriends);
+      const minExpectedSize = Math.floor(totPupils / Math.max(classNames.length, 1));
+      const maxExpectedSize = Math.ceil(totPupils / Math.max(classNames.length, 1));
 
       /* ── Banner pills ─────────────────────────────────────── */
       const pillData = [
         `Friend placement: ${totFriendOk}/${totWithFriends} = ${overallPct}`,
         `${totPupils} pupils total`,
-        `${classNames.length} classes`,
+        `${classNames.length} class groups`,
         `${totSiblings} sibling constraints`
       ];
       document.getElementById("statPills").innerHTML =
@@ -448,7 +465,7 @@
         { label: "Male / Female", value: `${totMale} / ${totFemale}`, sub: mfPct(totMale, totFemale), cls: "accent-navy" },
         { label: "Friends placed", value: overallPct, sub: `${totFriendOk} of ${totWithFriends} pupils`, cls: "accent-green" },
         { label: "Sibling pupils", value: totSiblings, sub: "island-constrained", cls: "accent-gold" },
-        { label: "Classes", value: classNames.length, sub: "defined", cls: "accent-red" },
+        { label: "Class groups", value: classNames.length, sub: "defined", cls: "accent-red" },
       ];
       document.getElementById("kpiStrip").innerHTML = kpis.map(k => `
         <div class="kpi-tile ${k.cls}">
@@ -462,7 +479,7 @@
       classNames.forEach(cn => {
         const d = summary[cn];
         const f = friendshipSummary[cn] || {};
-        const placed = (d.friendsOk || 0) + (d.friendsNo || 0);
+        const placed = (f.friendsOk || 0) + (f.friendsNo || 0);
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td><strong>${cn}</strong></td>
@@ -470,13 +487,13 @@
           <td>${d.male || 0}</td>
           <td>${d.female || 0}</td>
           <td>${mfPct(d.male, d.female)}</td>
-          <td>${d.island || "—"}</td>
-          <td>${d.siblingPupils || 0}</td>
+          <td>${classIsland(cn)}</td>
+          <td>${siblingByClass[cn] || 0}</td>
           <td>${f.friendsOk || 0}</td>
           <td>${f.friendsNo || 0}</td>
           <td>${f.noneListed || 0}</td>
           <td>${pct(f.friendsOk, placed)}</td>
-          <td>${sizeCheck(d.total)}</td>`;
+          <td>${sizeCheck(d.total, minExpectedSize, maxExpectedSize)}</td>`;
         ovBody.appendChild(tr);
       });
       const totRow = document.createElement("tr");
@@ -532,7 +549,7 @@
       /* ── 3. Sibling / Island Check ────────────────────────── */
       const islandMap = {};
       allocations.forEach(r => {
-        if (!r.siblingIsland) return;
+        if (!hasSiblingIsland(r)) return;
         const island = r.siblingIsland;
         if (!islandMap[island]) islandMap[island] = { classes: new Set(), pupils: 0, correct: 0, violations: 0 };
         islandMap[island].pupils++;
@@ -569,8 +586,8 @@
       const friendBody = document.querySelector("#friendshipTable tbody");
       classNames.forEach(cn => {
         const f = friendshipSummary[cn] || {};
-const placed = (f.friendsOk || 0) + (f.friendsNo || 0);
-const p = pct(f.friendsOk, placed);
+        const placed = (f.friendsOk || 0) + (f.friendsNo || 0);
+        const p = pct(f.friendsOk, placed);
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td><strong>${cn}</strong></td>
@@ -594,7 +611,7 @@ const p = pct(f.friendsOk, placed);
         <td>${ratingBadge(overallPct)}</td>`;
       friendBody.appendChild(fTotRow);
 
-      /* ── 6. Full Pupil Allocation ─────────────────────────── */
+      /* ── 5. Full Pupil Allocation ─────────────────────────── */
       const allocBody = document.querySelector("#allocationTable tbody");
       allocations.forEach(row => {
         const tr = document.createElement("tr");
