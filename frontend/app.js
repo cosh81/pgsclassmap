@@ -21,6 +21,7 @@ function addClassRow() {
   tbody.appendChild(row);
 }
 
+
 function getClassConfig() {
 
   const rows =
@@ -55,52 +56,149 @@ function getClassConfig() {
   return classes;
 }
 
-const pupilFile = document.getElementById("pupilFile");
-const result = document.getElementById("result");
 
-const pupilFileInput = document.getElementById("pupilFile");
-const selectedFileName = document.getElementById("selectedFileName");
-const uploadArea = document.querySelector(".upload-area");
+const fileInput =
+  document.getElementById("pupilFile");
 
-if (pupilFileInput && selectedFileName && uploadArea) {
-  pupilFileInput.addEventListener("change", () => {
+const result =
+  document.getElementById("result");
 
-    if (pupilFileInput.files.length > 0) {
+const selectedFileName =
+  document.getElementById("selectedFileName");
 
-      selectedFileName.textContent =
-        `Uploaded: ${pupilFileInput.files[0].name}`;
+const uploadArea =
+  document.querySelector(".upload-area");
 
-      selectedFileName.classList.add("has-file");
-      uploadArea.classList.add("has-file");
+const generateBtn =
+  document.querySelector(
+    'button[onclick="generateClasses()"]'
+  );
 
-    } else {
+const viewSummaryBtn =
+  document.getElementById("viewSummaryBtn");
 
-      selectedFileName.textContent =
-        "No file selected";
+const exportBtn =
+  document.getElementById("exportBtn");
 
-      selectedFileName.classList.remove("has-file");
-      uploadArea.classList.remove("has-file");
+
+function setGenerateButtonState(state) {
+
+  if (!generateBtn) {
+    return;
+  }
+
+  generateBtn.classList.remove(
+    "is-working",
+    "is-complete",
+    "is-error"
+  );
+
+  if (state === "working") {
+
+    generateBtn.disabled = true;
+    generateBtn.textContent =
+      "Generating...";
+
+    generateBtn.classList.add(
+      "is-working"
+    );
+
+    return;
+  }
+
+  if (state === "complete") {
+
+    generateBtn.disabled = false;
+    generateBtn.textContent =
+      "Generated ✓";
+
+    generateBtn.classList.add(
+      "is-complete"
+    );
+
+    return;
+  }
+
+  if (state === "error") {
+
+    generateBtn.disabled = false;
+    generateBtn.textContent =
+      "Generate failed";
+
+    generateBtn.classList.add(
+      "is-error"
+    );
+
+    return;
+  }
+
+  generateBtn.disabled = false;
+  generateBtn.textContent =
+    "Generate Classes";
+}
+
+
+if (
+  fileInput &&
+  selectedFileName &&
+  uploadArea
+) {
+
+  fileInput.addEventListener(
+    "change",
+    () => {
+
+      setGenerateButtonState(
+        "default"
+      );
+
+      if (
+        fileInput.files.length > 0
+      ) {
+
+        selectedFileName.textContent =
+          `Uploaded: ${fileInput.files[0].name}`;
+
+        selectedFileName.classList.add(
+          "has-file"
+        );
+
+        uploadArea.classList.add(
+          "has-file"
+        );
+
+      } else {
+
+        selectedFileName.textContent =
+          "No file selected";
+
+        selectedFileName.classList.remove(
+          "has-file"
+        );
+
+        uploadArea.classList.remove(
+          "has-file"
+        );
+      }
     }
-  });
+  );
 }
 
 
 async function generateClasses() {
 
-  const fileInput =
-    document.getElementById(
-      "pupilFile"
-    );
-
-  const result =
-    document.getElementById(
-      "result"
-    );
+  setGenerateButtonState(
+    "working"
+  );
 
   if (!fileInput.files.length) {
 
     result.textContent =
       "Please select a spreadsheet.";
+
+    setGenerateButtonState(
+      "default"
+    );
 
     return;
   }
@@ -112,6 +210,10 @@ async function generateClasses() {
 
     result.textContent =
       "Please add at least one class.";
+
+    setGenerateButtonState(
+      "default"
+    );
 
     return;
   }
@@ -188,6 +290,14 @@ async function generateClasses() {
     const data =
       await response.json();
 
+    if (!response.ok || data.status === "error") {
+
+      throw new Error(
+        data.message ||
+        "Allocation failed."
+      );
+    }
+
     sessionStorage.setItem(
       "lastAllocation",
       JSON.stringify(data)
@@ -200,20 +310,31 @@ async function generateClasses() {
         2
       );
 
-    document.getElementById(
-      "viewSummaryBtn"
-    ).disabled = false;
+    if (viewSummaryBtn) {
+      viewSummaryBtn.disabled = false;
+    }
 
-    document.getElementById(
-      "exportBtn"
-    ).disabled = false;
+    if (exportBtn) {
+      exportBtn.disabled = false;
+      exportBtn.textContent =
+        "Export JSON";
+    }
+
+    setGenerateButtonState(
+      "complete"
+    );
 
   } catch (error) {
 
     result.textContent =
       "Error: " + error.message;
+
+    setGenerateButtonState(
+      "error"
+    );
   }
 }
+
 
 function openSummary() {
 
@@ -222,6 +343,7 @@ function openSummary() {
     "_blank"
   );
 }
+
 
 function exportExcel() {
 

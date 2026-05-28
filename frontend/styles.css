@@ -398,6 +398,21 @@ table td select {
   cursor: not-allowed;
 }
 
+button.is-working {
+  background: #b45309;
+  color: #ffffff;
+}
+
+button.is-complete {
+  background: #166534;
+  color: #ffffff;
+}
+
+button.is-error {
+  background: #991b1b;
+  color: #ffffff;
+}
+
 /* ── Debug panel ──────────────────────────────────────────── */
 .debug-panel {
   background: var(--surface);
