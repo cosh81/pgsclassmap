@@ -1,4 +1,12 @@
 async function validateFile() {
+  await sendFile("/api/validate", "Validating...");
+}
+
+async function generateClasses() {
+  await sendFile("/api/generate", "Generating dummy class allocation...");
+}
+
+async function sendFile(endpoint, loadingText) {
   const fileInput = document.getElementById("pupilFile");
   const result = document.getElementById("result");
 
@@ -10,10 +18,14 @@ async function validateFile() {
   const formData = new FormData();
   formData.append("file", fileInput.files[0]);
 
-  result.textContent = "Validating...";
+  formData.append("minClassSize", document.getElementById("minClassSize").value);
+  formData.append("maxClassSize", document.getElementById("maxClassSize").value);
+  formData.append("maxGenderPercent", document.getElementById("maxGenderPercent").value);
+
+  result.textContent = loadingText;
 
   try {
-    const response = await fetch("/api/validate", {
+    const response = await fetch(endpoint, {
       method: "POST",
       body: formData
     });

@@ -12,12 +12,31 @@
     <section class="card">
       <h2>Upload Pupil List</h2>
       <input type="file" id="pupilFile" accept=".xlsx,.xls">
+
+      <div class="controls">
+        <label>
+          Min class size
+          <input type="number" id="minClassSize" value="28">
+        </label>
+
+        <label>
+          Max class size
+          <input type="number" id="maxClassSize" value="32">
+        </label>
+
+        <label>
+          Max gender percentage
+          <input type="number" id="maxGenderPercent" value="60">
+        </label>
+      </div>
+
       <button onclick="validateFile()">Validate File</button>
+      <button onclick="generateClasses()">Generate Classes</button>
     </section>
 
     <section class="card">
-      <h2>Validation Result</h2>
-      <pre id="result">No file validated yet.</pre>
+      <h2>Result</h2>
+      <pre id="result">No action run yet.</pre>
     </section>
   </main>
 
