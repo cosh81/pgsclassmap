@@ -379,6 +379,7 @@
     } else {
       const data = JSON.parse(raw);
       const summary = data.summary || {};
+      const friendshipSummary = data.friendshipSummary || {};
       const allocations = data.allocations || [];
       const classNames = Object.keys(summary);
 
@@ -417,15 +418,17 @@
       let totPupils = 0, totMale = 0, totFemale = 0;
       let totSiblings = 0, totFriendOk = 0, totFriendNo = 0, totNone = 0;
       classNames.forEach(cn => {
-        const d = summary[cn];
-        totPupils   += d.total  || 0;
-        totMale     += d.male   || 0;
-        totFemale   += d.female || 0;
-        totSiblings += d.siblingPupils || 0;
-        totFriendOk += d.friendsOk    || 0;
-        totFriendNo += d.friendsNo    || 0;
-        totNone     += d.noneListed   || 0;
-      });
+  const d = summary[cn];
+  const f = friendshipSummary[cn] || {};
+
+  totPupils   += d.total  || 0;
+  totMale     += d.male   || 0;
+  totFemale   += d.female || 0;
+  totSiblings += d.siblingPupils || 0;
+  totFriendOk += f.friendsOk    || 0;
+  totFriendNo += f.friendsNo    || 0;
+  totNone     += f.noneListed   || 0;
+});
       const totWithFriends = totFriendOk + totFriendNo;
       const overallPct = pct(totFriendOk, totWithFriends);
 
@@ -458,6 +461,7 @@
       const ovBody = document.querySelector("#classOverviewTable tbody");
       classNames.forEach(cn => {
         const d = summary[cn];
+        const f = friendshipSummary[cn] || {};
         const placed = (d.friendsOk || 0) + (d.friendsNo || 0);
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -468,10 +472,10 @@
           <td>${mfPct(d.male, d.female)}</td>
           <td>${d.island || "—"}</td>
           <td>${d.siblingPupils || 0}</td>
-          <td>${d.friendsOk || 0}</td>
-          <td>${d.friendsNo || 0}</td>
-          <td>${d.noneListed || 0}</td>
-          <td>${pct(d.friendsOk, placed)}</td>
+          <td>${f.friendsOk || 0}</td>
+          <td>${f.friendsNo || 0}</td>
+          <td>${f.noneListed || 0}</td>
+          <td>${pct(f.friendsOk, placed)}</td>
           <td>${sizeCheck(d.total)}</td>`;
         ovBody.appendChild(tr);
       });
@@ -564,16 +568,16 @@
       /* ── 4. Friendship Placement ──────────────────────────── */
       const friendBody = document.querySelector("#friendshipTable tbody");
       classNames.forEach(cn => {
-        const d = summary[cn];
-        const placed = (d.friendsOk||0) + (d.friendsNo||0);
-        const p = pct(d.friendsOk, placed);
+        const f = friendshipSummary[cn] || {};
+const placed = (f.friendsOk || 0) + (f.friendsNo || 0);
+const p = pct(f.friendsOk, placed);
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td><strong>${cn}</strong></td>
           <td>${placed}</td>
-          <td>${d.friendsOk || 0}</td>
-          <td>${d.friendsNo || 0}</td>
-          <td>${d.noneListed || 0}</td>
+          <td>${f.friendsOk || 0}</td>
+          <td>${f.friendsNo || 0}</td>
+          <td>${f.noneListed || 0}</td>
           <td>${p}</td>
           <td>${ratingBadge(p)}</td>`;
         friendBody.appendChild(tr);
