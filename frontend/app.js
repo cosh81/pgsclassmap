@@ -165,6 +165,18 @@ async function generateClasses() {
         2
       );
 
+      sessionStorage.setItem(
+  "lastAllocation",
+  JSON.stringify(data)
+);
+
+const summaryButton =
+  document.getElementById("viewSummaryBtn");
+
+if (summaryButton) {
+  summaryButton.disabled = false;
+}
+
   } catch (error) {
 
     result.textContent =

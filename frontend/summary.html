@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PGS ClassMap Summary</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <header class="topbar">
+    <div>
+      <h1>Allocation Summary</h1>
+      <p>PGS ClassMap</p>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <section class="card">
+      <div class="section-header">
+        <h2>Class Overview</h2>
+      </div>
+
+      <div id="summaryGrid" class="summary-grid"></div>
+    </section>
+
+    <section class="card">
+      <div class="section-header">
+        <h2>Allocation Preview</h2>
+      </div>
+
+      <table id="allocationTable">
+        <thead>
+          <tr>
+            <th>Pupil</th>
+            <th>Class</th>
+            <th>Gender</th>
+            <th>Primary School</th>
+            <th>Sibling Island</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <script>
+    const data = JSON.parse(sessionStorage.getItem("lastAllocation"));
+
+    const summaryGrid = document.getElementById("summaryGrid");
+    const allocationBody = document.querySelector("#allocationTable tbody");
+
+    if (!data) {
+      summaryGrid.innerHTML = "<p>No allocation summary found. Generate classes first.</p>";
+    } else {
+      Object.entries(data.summary || {}).forEach(([className, details]) => {
+        const card = document.createElement("div");
+        card.className = "summary-card";
+
+        card.innerHTML = `
+          <h3>${className}</h3>
+          <p><strong>Total:</strong> ${details.total}</p>
+          <p><strong>Male:</strong> ${details.male}</p>
+          <p><strong>Female:</strong> ${details.female}</p>
+          <p><strong>Primary Schools:</strong> ${Object.keys(details.schools || {}).length}</p>
+        `;
+
+        summaryGrid.appendChild(card);
+      });
+
+      (data.allocations || []).forEach(row => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td>${row.pupil || ""}</td>
+          <td>${row.class || ""}</td>
+          <td>${row.gender || ""}</td>
+          <td>${row.primarySchool || ""}</td>
+          <td>${row.siblingIsland || ""}</td>
+        `;
+
+        allocationBody.appendChild(tr);
+      });
+    }
+  </script>
+
+</body>
+</html>
