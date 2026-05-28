@@ -172,7 +172,8 @@ body {
 .upload-area {
   border: 1.5px dashed var(--border-strong);
   border-radius: var(--radius);
-  padding: 32px 24px;
+  padding: 18px 22px;
+  min-height: 96px;
   text-align: center;
   background: var(--navy-light);
   transition: border-color 0.2s, background 0.2s;
@@ -185,10 +186,15 @@ body {
   background: #dfe6f2;
 }
 
+.upload-area.has-file {
+  border-color: #166534;
+  background: #ecfdf3;
+}
+
 .upload-icon {
-  font-size: 28px;
+  font-size: 22px;
   color: var(--navy-mid);
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 
 .upload-label {
@@ -196,12 +202,23 @@ body {
   color: var(--navy);
   font-size: 14px;
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .upload-hint {
   color: var(--text-muted);
   font-size: 12px;
+}
+
+.selected-file-name {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.selected-file-name.has-file {
+  color: #166534;
+  font-weight: 700;
 }
 
 .upload-area input[type="file"] {

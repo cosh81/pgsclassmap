@@ -55,6 +55,36 @@ function getClassConfig() {
   return classes;
 }
 
+const pupilFile = document.getElementById("pupilFile");
+const result = document.getElementById("result");
+
+const pupilFileInput = document.getElementById("pupilFile");
+const selectedFileName = document.getElementById("selectedFileName");
+const uploadArea = document.querySelector(".upload-area");
+
+if (pupilFileInput && selectedFileName && uploadArea) {
+  pupilFileInput.addEventListener("change", () => {
+
+    if (pupilFileInput.files.length > 0) {
+
+      selectedFileName.textContent =
+        `Uploaded: ${pupilFileInput.files[0].name}`;
+
+      selectedFileName.classList.add("has-file");
+      uploadArea.classList.add("has-file");
+
+    } else {
+
+      selectedFileName.textContent =
+        "No file selected";
+
+      selectedFileName.classList.remove("has-file");
+      uploadArea.classList.remove("has-file");
+    }
+  });
+}
+
+
 async function generateClasses() {
 
   const fileInput =
