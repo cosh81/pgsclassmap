@@ -2,172 +2,187 @@
 <html lang="en">
 
 <head>
+
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PGSClassMap Summary</title>
-  <link rel="stylesheet" href="styles.css">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>
+    Allocation Summary
+  </title>
+
+  <link
+    rel="stylesheet"
+    href="styles.css"
+  >
+
 </head>
 
 <body>
 
   <header class="topbar">
+
     <div>
-      <h1>Allocation Summary</h1>
-      <p>PGSClassMap — S1 Class Allocation & Transition Planning</p>
+
+      <h1>
+        Allocation Summary
+      </h1>
+
+      <p>
+        PGSClassMap
+      </p>
+
     </div>
+
   </header>
 
-  <main class="container report-page">
-
-    <section class="report-title card">
-      <h2>SECONDARY SCHOOL INTAKE — CLASS ALLOCATION SUMMARY</h2>
-      <p id="headlineText">Generate classes first to view the allocation summary.</p>
-    </section>
-
-    <section class="kpi-grid" id="kpiGrid"></section>
+  <main class="container">
 
     <section class="card">
-      <h2 class="report-section-title">1. CLASS OVERVIEW</h2>
-      <div class="table-wrap">
-        <table class="report-table" id="classOverviewTable"></table>
-      </div>
-    </section>
 
-    <section class="card">
-      <h2 class="report-section-title">2. SCHOOL DISTRIBUTION PER CLASS</h2>
-      <div class="table-wrap">
-        <table class="report-table" id="schoolDistributionTable"></table>
+      <div class="section-header">
+
+        <h2>
+          Overview
+        </h2>
+
       </div>
+
+      <div
+        id="summaryGrid"
+        class="summary-grid"
+      ></div>
+
     </section>
 
     <section class="card">
-      <h2 class="report-section-title">3. SIBLING / ISLAND CONSTRAINT CHECK</h2>
-      <div class="table-wrap">
-        <table class="report-table" id="siblingTable"></table>
-      </div>
-    </section>
 
-    <section class="card">
-      <h2 class="report-section-title">4. FRIENDSHIP PLACEMENT SUMMARY</h2>
-      <div class="table-wrap">
-        <table class="report-table" id="friendshipTable"></table>
+      <div class="section-header">
+
+        <h2>
+          Pupil Allocation
+        </h2>
+
       </div>
+
+      <table id="allocationTable">
+
+        <thead>
+
+          <tr>
+
+            <th>Pupil</th>
+            <th>Class</th>
+            <th>Gender</th>
+            <th>Primary School</th>
+            <th>Sibling Island</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody></tbody>
+
+      </table>
+
     </section>
 
   </main>
 
   <script>
-    const report = JSON.parse(sessionStorage.getItem("lastAllocation"));
 
-    function setHTML(id, html) {
-      document.getElementById(id).innerHTML = html;
-    }
-
-    function pct(value) {
-      return value === null || value === undefined ? "—" : `${value}%`;
-    }
-
-    if (!report) {
-      setHTML("headlineText", "No allocation found. Return to PGSClassMap and generate classes first.");
-    } else {
-      const h = report.headline;
-
-      setHTML(
-        "headlineText",
-        `Friend placement: ${h.friendPlaced}/${h.friendPlaced + h.friendNotPlaced} = ${pct(h.friendPlacedPercent)} | Total pupils: ${h.totalPupils} | Classes: ${h.totalClasses} | Sibling pupils: ${h.siblingConstrainedPupils}`
+    const raw =
+      sessionStorage.getItem(
+        "lastAllocation"
       );
 
-      setHTML("kpiGrid", `
-        <div class="kpi-card"><span>Total Pupils</span><strong>${h.totalPupils}</strong></div>
-        <div class="kpi-card"><span>Classes</span><strong>${h.totalClasses}</strong></div>
-        <div class="kpi-card"><span>Friend Placement</span><strong>${pct(h.friendPlacedPercent)}</strong></div>
-        <div class="kpi-card"><span>Sibling Pupils</span><strong>${h.siblingConstrainedPupils}</strong></div>
-      `);
+    if (!raw) {
 
-      const classRows = report.classOverview.map(r => `
-        <tr>
-          <td>${r.className}</td>
-          <td>${r.total}</td>
-          <td>${r.male}</td>
-          <td>${r.female}</td>
-          <td>${r.genderSplit}</td>
-          <td>${r.island}</td>
-          <td>${r.siblingPupils}</td>
-          <td>${r.friendsYes}</td>
-          <td>${r.friendsNo}</td>
-          <td>${r.noneListed}</td>
-          <td>${pct(r.placedPercent)}</td>
-        </tr>
-      `).join("");
+      alert(
+        "No allocation data found."
+      );
 
-      setHTML("classOverviewTable", `
-        <thead>
-          <tr>
-            <th>Class</th><th>Total</th><th>Male</th><th>Female</th><th>M/F %</th>
-            <th>Island</th><th>Sibling Pupils</th><th>Friends ✓</th><th>Friends ✗</th><th>None Listed</th><th>% Placed</th>
-          </tr>
-        </thead>
-        <tbody>${classRows}</tbody>
-      `);
+    } else {
 
-      const classNames = report.classConfig.map(c => c.className);
+      const data =
+        JSON.parse(raw);
 
-      const schoolRows = report.schoolDistribution.map(row => `
-        <tr>
-          <td>${row.school}</td>
-          ${classNames.map(c => `<td>${row.classes[c] || 0}</td>`).join("")}
-          <td>${row.total}</td>
-        </tr>
-      `).join("");
+      const summaryGrid =
+        document.getElementById(
+          "summaryGrid"
+        );
 
-      setHTML("schoolDistributionTable", `
-        <thead>
-          <tr>
-            <th>School</th>
-            ${classNames.map(c => `<th>${c}</th>`).join("")}
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>${schoolRows}</tbody>
-      `);
+      const allocationBody =
+        document.querySelector(
+          "#allocationTable tbody"
+        );
 
-      const siblingRows = report.siblingSummary.map(r => `
-        <tr>
-          <td>${r.island}</td>
-          <td>${r.validClasses}</td>
-          <td>${r.pupilsRequiring}</td>
-          <td>${r.inCorrectIsland}</td>
-          <td>${r.violations}</td>
-          <td>${r.status}</td>
-        </tr>
-      `).join("");
+      Object.entries(
+        data.summary || {}
+      ).forEach(
+        ([className, details]) => {
 
-      setHTML("siblingTable", `
-        <thead>
-          <tr><th>Island</th><th>Valid Classes</th><th>Pupils Requiring</th><th>In Correct Island</th><th>Violations</th><th>Status</th></tr>
-        </thead>
-        <tbody>${siblingRows}</tbody>
-      `);
+          const card =
+            document.createElement("div");
 
-      const friendRows = report.friendshipSummary.map(r => `
-        <tr>
-          <td>${r.className}</td>
-          <td>${r.withFriends}</td>
-          <td>${r.sameClass}</td>
-          <td>${r.differentClass}</td>
-          <td>${r.noneListed}</td>
-          <td>${pct(r.placedPercent)}</td>
-          <td>${r.rating}</td>
-        </tr>
-      `).join("");
+          card.className =
+            "summary-card";
 
-      setHTML("friendshipTable", `
-        <thead>
-          <tr><th>Class</th><th>With Friends</th><th>Same Class ✓</th><th>Diff Class ✗</th><th>None Listed</th><th>% Placed</th><th>Rating</th></tr>
-        </thead>
-        <tbody>${friendRows}</tbody>
-      `);
+          card.innerHTML = `
+            <h3>${className}</h3>
+
+            <p>
+              <strong>Total:</strong>
+              ${details.total}
+            </p>
+
+            <p>
+              <strong>Male:</strong>
+              ${details.male}
+            </p>
+
+            <p>
+              <strong>Female:</strong>
+              ${details.female}
+            </p>
+
+            <p>
+              <strong>Schools:</strong>
+              ${Object.keys(
+                details.schools || {}
+              ).length}
+            </p>
+          `;
+
+          summaryGrid.appendChild(card);
+
+        }
+      );
+
+      (
+        data.allocations || []
+      ).forEach(row => {
+
+        const tr =
+          document.createElement("tr");
+
+        tr.innerHTML = `
+          <td>${row.pupil}</td>
+          <td>${row.class}</td>
+          <td>${row.gender}</td>
+          <td>${row.primarySchool}</td>
+          <td>${row.siblingIsland}</td>
+        `;
+
+        allocationBody.appendChild(tr);
+
+      });
+
     }
+
   </script>
 
 </body>
