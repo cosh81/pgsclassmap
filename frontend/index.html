@@ -1,39 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>PGS ClassMap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Fraunces:opsz,wght@9..144,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
   <header class="topbar">
-    <div>
-      <h1>PGS ClassMap</h1>
-      <p>S1 Class Allocation</p>
+    <div class="brand">
+      <div class="brand-icon">P</div>
+      <div>
+        <h1>PGS ClassMap</h1>
+        <div class="topbar-sub">S1 Class Allocation System</div>
+      </div>
     </div>
+    <div class="header-badge">System Ready</div>
   </header>
 
   <main class="container">
 
+    <!-- Upload -->
     <section class="card">
       <div class="section-header">
-        <h2>Upload Spreadsheet</h2>
+        <h2>Upload Pupil Spreadsheet</h2>
+        <p>Accepts .xlsx and .xls files exported from your MIS</p>
       </div>
-
-      <input type="file" id="pupilFile" accept=".xlsx,.xls">
+      <div class="upload-area">
+        <input type="file" id="pupilFile" accept=".xlsx,.xls">
+        <div class="upload-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <span class="upload-label">Click to upload or drag & drop</span>
+        <span class="upload-hint">.xlsx or .xls — pupil data spreadsheet</span>
+      </div>
     </section>
 
+    <!-- Class Setup + Constraints -->
     <section class="grid-2">
 
       <div class="card">
         <div class="section-header">
           <h2>Class Setup</h2>
+          <p>Define classes and assign island groups</p>
         </div>
-
         <table id="classTable">
           <thead>
             <tr>
@@ -43,23 +62,27 @@
           </thead>
           <tbody></tbody>
         </table>
-
-        <button class="secondary-btn" onclick="addClassRow()">Add Class</button>
+        <button class="secondary-btn" style="background:#f3f5f9;color:#0e1f3d;border-color:#dce3ef" onclick="addClassRow()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Class
+        </button>
       </div>
 
       <div class="card">
         <div class="section-header">
           <h2>Constraint Setup</h2>
+          <p>Set allocation priorities and class size limits</p>
         </div>
 
-        <div class="form-group">
-          <label>Minimum Class Size</label>
-          <input type="number" id="minClassSize" value="28">
-        </div>
-
-        <div class="form-group">
-          <label>Maximum Class Size</label>
-          <input type="number" id="maxClassSize" value="32">
+        <div class="constraint-grid">
+          <div class="form-group">
+            <label>Min Class Size</label>
+            <input type="number" id="minClassSize" value="28">
+          </div>
+          <div class="form-group">
+            <label>Max Class Size</label>
+            <input type="number" id="maxClassSize" value="32">
+          </div>
         </div>
 
         <div class="form-group">
@@ -107,37 +130,31 @@
 
     </section>
 
+    <!-- Generate -->
     <section class="card action-card">
       <div class="section-header">
         <h2>Generate Allocation</h2>
+        <p>Run the algorithm against your uploaded data and constraints</p>
       </div>
-
       <div class="button-row">
-        <button class="primary-btn" onclick="generateClasses()">Generate Classes</button>
+        <button class="primary-btn" onclick="generateClasses()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 2 13 9 20 9"/><path d="M20 16.24V21H4V3h9"/><polyline points="18 4 22 8 18 12"/></svg>
+          Generate Classes
+        </button>
 
-        <button
-  id="exportBtn"
-  class="secondary-btn"
-  disabled
-  onclick="exportExcel()"
->
-  Export Excel
-</button>
+        <button id="exportBtn" class="secondary-btn" disabled onclick="exportExcel()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Excel
+        </button>
 
-        <button class="secondary-btn" disabled>View Classes</button>
-
-        <button
-  id="exportBtn"
-  class="secondary-btn"
-  disabled
-  onclick="exportExcel()"
->
-  Export Excel
-</button>
-
+        <button id="viewSummaryBtn" class="secondary-btn" disabled onclick="openSummary()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          View Classes
+        </button>
       </div>
     </section>
 
+    <!-- Debug -->
     <details class="debug-panel">
       <summary>Developer Output</summary>
       <pre id="result">No output yet.</pre>

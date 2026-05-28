@@ -1,189 +1,641 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Allocation Summary — PGS ClassMap</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Fraunces:opsz,wght@9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* ── Summary-specific additions ── */
+    .summary-banner {
+      background: var(--navy);
+      color: white;
+      border-radius: var(--radius-lg);
+      padding: 20px 28px;
+      margin-bottom: 20px;
+      border-left: 5px solid var(--gold);
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .summary-banner .flash { font-size: 22px; }
+    .summary-banner p { margin: 0; font-size: 14px; line-height: 1.65; color: rgba(255,255,255,0.85); }
+    .summary-banner strong { color: white; font-weight: 600; }
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  />
+    .stat-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .pill {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.9);
+      font-weight: 500;
+    }
 
-  <title>
-    Allocation Summary
-  </title>
+    /* ── KPI strip ── */
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .kpi-tile {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      border-top: 3px solid var(--navy);
+    }
+    .kpi-tile.accent-red { border-top-color: var(--accent); }
+    .kpi-tile.accent-gold { border-top-color: var(--gold); }
+    .kpi-tile.accent-green { border-top-color: #16a34a; }
+    .kpi-tile label {
+      display: block;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .kpi-tile strong {
+      font-family: 'Fraunces', serif;
+      font-size: 26px;
+      color: var(--navy);
+      display: block;
+      line-height: 1;
+    }
+    .kpi-tile small {
+      font-size: 11px;
+      color: var(--text-faint);
+      margin-top: 3px;
+      display: block;
+    }
 
-  <link
-    rel="stylesheet"
-    href="styles.css"
-  >
+    /* ── Section number badges ── */
+    .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      background: var(--navy);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 50%;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
 
+    /* ── Summary tables (shared) ── */
+    .sum-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .sum-table thead th {
+      background: var(--navy-light);
+      color: var(--navy);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      padding: 9px 12px;
+      text-align: left;
+      border-bottom: 2px solid var(--border);
+    }
+    .sum-table tbody td {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .sum-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+    .sum-table tbody tr.total-row td {
+      background: var(--navy-light);
+      font-weight: 600;
+      color: var(--navy);
+      border-top: 2px solid var(--border-strong);
+    }
+    .sum-table tbody tr:hover:not(.total-row) td {
+      background: #f8fafd;
+    }
+
+    /* ── Status badges ── */
+    .badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-amber { background: #fef3c7; color: #92400e; }
+    .badge-red   { background: #fee2e2; color: #991b1b; }
+    .badge-navy  { background: var(--navy-light); color: var(--navy); }
+
+    /* ── Colour legend ── */
+    .legend-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 13px;
+    }
+    .legend-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .legend-dot.green { background: #16a34a; }
+    .legend-dot.red   { background: var(--accent); }
+    .legend-dot.grey  { background: #94a3b8; }
+    .legend-item p { margin: 0; color: var(--text-muted); line-height: 1.5; }
+    .legend-item strong { display: block; color: var(--text); margin-bottom: 2px; }
+
+    /* ── Note box ── */
+    .note-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-left: 4px solid var(--gold);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #78350f;
+      margin-top: 12px;
+      line-height: 1.6;
+    }
+
+    /* ── Print button ── */
+    .page-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .outline-btn {
+      background: white;
+      color: var(--navy);
+      border: 1px solid var(--border-strong);
+      padding: 9px 18px;
+      border-radius: var(--radius-sm);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: background 0.15s;
+    }
+    .outline-btn:hover { background: var(--navy-light); }
+
+    @media print {
+      .topbar, .page-actions { display: none; }
+      .card { box-shadow: none; break-inside: avoid; }
+    }
+  </style>
 </head>
-
 <body>
 
   <header class="topbar">
-
-    <div>
-
-      <h1>
-        Allocation Summary
-      </h1>
-
-      <p>
-        PGSClassMap
-      </p>
-
+    <div class="brand">
+      <div class="brand-icon">P</div>
+      <div>
+        <h1>PGS ClassMap</h1>
+        <div class="topbar-sub">Allocation Summary Report</div>
+      </div>
     </div>
-
+    <div class="header-badge">
+      <div class="dot"></div>
+      <span id="headerYear">2026 / 2027</span>
+    </div>
   </header>
 
   <main class="container">
 
-    <section class="card">
+    <div class="page-actions">
+      <button class="outline-btn" onclick="window.print()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print
+      </button>
+      <button class="outline-btn" onclick="window.close()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Close
+      </button>
+    </div>
 
-      <div class="section-header">
-
-        <h2>
-          Overview
-        </h2>
-
+    <!-- Live banner -->
+    <div class="summary-banner">
+      <div class="flash">⚡</div>
+      <div>
+        <p><strong>Secondary School Intake — Class Allocation Summary</strong></p>
+        <div class="stat-pills" id="statPills">
+          <!-- populated by JS -->
+        </div>
       </div>
+    </div>
 
-      <div
-        id="summaryGrid"
-        class="summary-grid"
-      ></div>
+    <!-- KPI strip -->
+    <div class="kpi-strip" id="kpiStrip">
+      <!-- populated by JS -->
+    </div>
 
+    <!-- 1. Class Overview -->
+    <section class="card">
+      <div class="section-header">
+        <h2><span class="section-num">1</span>Class Overview</h2>
+      </div>
+      <div class="table-wrap">
+        <table class="sum-table" id="classOverviewTable">
+          <thead>
+            <tr>
+              <th>Class</th>
+              <th>Total</th>
+              <th>Male</th>
+              <th>Female</th>
+              <th>M / F %</th>
+              <th>Island</th>
+              <th>Sibling pupils</th>
+              <th>Friends ✓</th>
+              <th>Friends ✗</th>
+              <th>None listed</th>
+              <th>% Placed</th>
+              <th>Size check</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </section>
 
+    <!-- 2. School Distribution -->
     <section class="card">
-
       <div class="section-header">
-
-        <h2>
-          Pupil Allocation
-        </h2>
-
+        <h2><span class="section-num">2</span>School Distribution per Class</h2>
       </div>
+      <div class="table-wrap">
+        <table class="sum-table" id="schoolDistTable">
+          <thead><tr id="schoolDistHead"></tr></thead>
+          <tbody id="schoolDistBody"></tbody>
+        </table>
+      </div>
+    </section>
 
-      <table id="allocationTable">
+    <!-- 3. Sibling / Island Check -->
+    <section class="card">
+      <div class="section-header">
+        <h2><span class="section-num">3</span>Sibling / Island Constraint Check</h2>
+      </div>
+      <div class="table-wrap">
+        <table class="sum-table" id="siblingTable">
+          <thead>
+            <tr>
+              <th>Island</th>
+              <th>Valid classes</th>
+              <th>Pupils requiring</th>
+              <th>In correct island</th>
+              <th>Violations</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
 
-        <thead>
+    <!-- 4. Friendship Placement -->
+    <section class="card">
+      <div class="section-header">
+        <h2><span class="section-num">4</span>Friendship Placement Summary</h2>
+      </div>
+      <div class="table-wrap">
+        <table class="sum-table" id="friendshipTable">
+          <thead>
+            <tr>
+              <th>Class</th>
+              <th>With friends</th>
+              <th>Same class ✓</th>
+              <th>Diff class ✗</th>
+              <th>None listed</th>
+              <th>% Placed</th>
+              <th>Rating</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
 
-          <tr>
+    <!-- 5. Colour coding & notes -->
+    <section class="card">
+      <div class="section-header">
+        <h2><span class="section-num">5</span>Colour Coding &amp; Notes</h2>
+      </div>
+      <div class="legend-grid">
+        <div class="legend-item">
+          <div class="legend-dot green"></div>
+          <p><strong>Friends in class — ✓ Yes</strong>At least one nominated friend is in the same class.</p>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot red"></div>
+          <p><strong>Friends in class — ✗ No</strong>No nominated friends in same class. Most due to island constraints preventing co-placement.</p>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot grey"></div>
+          <p><strong>Friends in class — —</strong>No friends were nominated by this pupil.</p>
+        </div>
+        <div class="legend-item" style="background:white">
+          <div style="width:14px;height:14px;flex-shrink:0;margin-top:2px">⚡</div>
+          <p><strong>Pupil Allocation table</strong>Change the Class column on the Pupil List and all counts update instantly.</p>
+        </div>
+      </div>
+      <div class="note-box">
+        <strong>Only edit the Pupil List.</strong> The Pupil List is the only tab that should be manually edited. All other tabs are read-only views driven by the allocation data.
+      </div>
+    </section>
 
-            <th>Pupil</th>
-            <th>Class</th>
-            <th>Gender</th>
-            <th>Primary School</th>
-            <th>Sibling Island</th>
-
-          </tr>
-
-        </thead>
-
-        <tbody></tbody>
-
-      </table>
-
+    <!-- 6. Full Pupil Allocation -->
+    <section class="card">
+      <div class="section-header">
+        <h2><span class="section-num">6</span>Full Pupil Allocation</h2>
+      </div>
+      <div class="table-wrap">
+        <table class="sum-table" id="allocationTable">
+          <thead>
+            <tr>
+              <th>Pupil</th>
+              <th>Class</th>
+              <th>Gender</th>
+              <th>Primary School</th>
+              <th>Sibling Island</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </section>
 
   </main>
 
   <script>
-
-    const raw =
-      sessionStorage.getItem(
-        "lastAllocation"
-      );
+    const raw = sessionStorage.getItem("lastAllocation");
 
     if (!raw) {
-
-      alert(
-        "No allocation data found."
-      );
-
+      alert("No allocation data found. Please generate classes first.");
     } else {
+      const data = JSON.parse(raw);
+      const summary = data.summary || {};
+      const allocations = data.allocations || [];
+      const classNames = Object.keys(summary);
 
-      const data =
-        JSON.parse(raw);
+      /* ── Helpers ─────────────────────────────────────────── */
+      function pct(n, d) {
+        if (!d) return "—";
+        return Math.round((n / d) * 100) + "%";
+      }
+      function sizeCheck(total, min, max) {
+        min = min || 28; max = max || 32;
+        const ok = total >= min && total <= max;
+        return ok
+          ? '<span class="badge badge-green">✓ OK</span>'
+          : '<span class="badge badge-red">✗ Fail</span>';
+      }
+      function ratingBadge(pctStr) {
+        const n = parseInt(pctStr);
+        if (n >= 90) return '<span class="badge badge-green">✓ Excellent</span>';
+        if (n >= 80) return '<span class="badge badge-green">✓ Strong</span>';
+        if (n >= 65) return '<span class="badge badge-amber">~ Good</span>';
+        return '<span class="badge badge-red">✗ Low</span>';
+      }
+      function friendBadge(status) {
+        if (!status) return '<span class="badge badge-navy">—</span>';
+        if (status.includes("Yes")) return '<span class="badge badge-green">✓ Yes</span>';
+        if (status.includes("No"))  return '<span class="badge badge-red">✗ No</span>';
+        return '<span class="badge badge-navy">—</span>';
+      }
+      function mfPct(male, female) {
+        const t = (male || 0) + (female || 0);
+        if (!t) return "—";
+        return Math.round((male/t)*100) + "% / " + Math.round((female/t)*100) + "%";
+      }
 
-      const summaryGrid =
-        document.getElementById(
-          "summaryGrid"
-        );
-
-      const allocationBody =
-        document.querySelector(
-          "#allocationTable tbody"
-        );
-
-      Object.entries(
-        data.summary || {}
-      ).forEach(
-        ([className, details]) => {
-
-          const card =
-            document.createElement("div");
-
-          card.className =
-            "summary-card";
-
-          card.innerHTML = `
-            <h3>${className}</h3>
-
-            <p>
-              <strong>Total:</strong>
-              ${details.total}
-            </p>
-
-            <p>
-              <strong>Male:</strong>
-              ${details.male}
-            </p>
-
-            <p>
-              <strong>Female:</strong>
-              ${details.female}
-            </p>
-
-            <p>
-              <strong>Schools:</strong>
-              ${Object.keys(
-                details.schools || {}
-              ).length}
-            </p>
-          `;
-
-          summaryGrid.appendChild(card);
-
-        }
-      );
-
-      (
-        data.allocations || []
-      ).forEach(row => {
-
-        const tr =
-          document.createElement("tr");
-
-        tr.innerHTML = `
-          <td>${row.pupil}</td>
-          <td>${row.class}</td>
-          <td>${row.gender}</td>
-          <td>${row.primarySchool}</td>
-          <td>${row.siblingIsland}</td>
-        `;
-
-        allocationBody.appendChild(tr);
-
+      /* ── Totals ───────────────────────────────────────────── */
+      let totPupils = 0, totMale = 0, totFemale = 0;
+      let totSiblings = 0, totFriendOk = 0, totFriendNo = 0, totNone = 0;
+      classNames.forEach(cn => {
+        const d = summary[cn];
+        totPupils   += d.total  || 0;
+        totMale     += d.male   || 0;
+        totFemale   += d.female || 0;
+        totSiblings += d.siblingPupils || 0;
+        totFriendOk += d.friendsOk    || 0;
+        totFriendNo += d.friendsNo    || 0;
+        totNone     += d.noneListed   || 0;
       });
+      const totWithFriends = totFriendOk + totFriendNo;
+      const overallPct = pct(totFriendOk, totWithFriends);
 
+      /* ── Banner pills ─────────────────────────────────────── */
+      const pillData = [
+        `Friend placement: ${totFriendOk}/${totWithFriends} = ${overallPct}`,
+        `${totPupils} pupils total`,
+        `${classNames.length} classes`,
+        `${totSiblings} sibling constraints`
+      ];
+      document.getElementById("statPills").innerHTML =
+        pillData.map(t => `<span class="pill">${t}</span>`).join("");
+
+      /* ── KPI strip ────────────────────────────────────────── */
+      const kpis = [
+        { label: "Total pupils", value: totPupils, sub: "across all classes", cls: "" },
+        { label: "Male / Female", value: `${totMale} / ${totFemale}`, sub: mfPct(totMale, totFemale), cls: "accent-navy" },
+        { label: "Friends placed", value: overallPct, sub: `${totFriendOk} of ${totWithFriends} pupils`, cls: "accent-green" },
+        { label: "Sibling pupils", value: totSiblings, sub: "island-constrained", cls: "accent-gold" },
+        { label: "Classes", value: classNames.length, sub: "defined", cls: "accent-red" },
+      ];
+      document.getElementById("kpiStrip").innerHTML = kpis.map(k => `
+        <div class="kpi-tile ${k.cls}">
+          <label>${k.label}</label>
+          <strong>${k.value}</strong>
+          <small>${k.sub}</small>
+        </div>`).join("");
+
+      /* ── 1. Class Overview ────────────────────────────────── */
+      const ovBody = document.querySelector("#classOverviewTable tbody");
+      classNames.forEach(cn => {
+        const d = summary[cn];
+        const placed = (d.friendsOk || 0) + (d.friendsNo || 0);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${cn}</strong></td>
+          <td>${d.total || 0}</td>
+          <td>${d.male || 0}</td>
+          <td>${d.female || 0}</td>
+          <td>${mfPct(d.male, d.female)}</td>
+          <td>${d.island || "—"}</td>
+          <td>${d.siblingPupils || 0}</td>
+          <td>${d.friendsOk || 0}</td>
+          <td>${d.friendsNo || 0}</td>
+          <td>${d.noneListed || 0}</td>
+          <td>${pct(d.friendsOk, placed)}</td>
+          <td>${sizeCheck(d.total)}</td>`;
+        ovBody.appendChild(tr);
+      });
+      const totRow = document.createElement("tr");
+      totRow.className = "total-row";
+      totRow.innerHTML = `
+        <td>TOTAL</td>
+        <td>${totPupils}</td>
+        <td>${totMale}</td>
+        <td>${totFemale}</td>
+        <td>${mfPct(totMale, totFemale)}</td>
+        <td>—</td>
+        <td>${totSiblings}</td>
+        <td>${totFriendOk}</td>
+        <td>${totFriendNo}</td>
+        <td>${totNone}</td>
+        <td>${overallPct}</td>
+        <td><span class="badge badge-navy">${totPupils} pupils</span></td>`;
+      ovBody.appendChild(totRow);
+
+      /* ── 2. School Distribution ───────────────────────────── */
+      const schoolMap = {};
+      allocations.forEach(r => {
+        const s = r.primarySchool || "Other";
+        const c = r.class;
+        if (!schoolMap[s]) schoolMap[s] = {};
+        schoolMap[s][c] = (schoolMap[s][c] || 0) + 1;
+      });
+      const distHead = document.getElementById("schoolDistHead");
+      distHead.innerHTML = `<th>School</th>` +
+        classNames.map(c => `<th>${c}</th>`).join("") + `<th>Total</th>`;
+      const distBody = document.getElementById("schoolDistBody");
+      let schoolTotals = {};
+      classNames.forEach(c => schoolTotals[c] = 0);
+      Object.entries(schoolMap).sort((a,b) => {
+        const ta = Object.values(a[1]).reduce((x,y)=>x+y,0);
+        const tb = Object.values(b[1]).reduce((x,y)=>x+y,0);
+        return tb - ta;
+      }).forEach(([school, counts]) => {
+        const rowTotal = classNames.reduce((s,c) => s + (counts[c]||0), 0);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${school}</td>` +
+          classNames.map(c => { schoolTotals[c]+=(counts[c]||0); return `<td>${counts[c]||0}</td>`; }).join("") +
+          `<td><strong>${rowTotal}</strong></td>`;
+        distBody.appendChild(tr);
+      });
+      const sTotRow = document.createElement("tr");
+      sTotRow.className = "total-row";
+      sTotRow.innerHTML = `<td>TOTAL</td>` +
+        classNames.map(c => `<td>${schoolTotals[c]||0}</td>`).join("") +
+        `<td><strong>${totPupils}</strong></td>`;
+      distBody.appendChild(sTotRow);
+
+      /* ── 3. Sibling / Island Check ────────────────────────── */
+      const islandMap = {};
+      allocations.forEach(r => {
+        if (!r.siblingIsland) return;
+        const island = r.siblingIsland;
+        if (!islandMap[island]) islandMap[island] = { classes: new Set(), pupils: 0, correct: 0, violations: 0 };
+        islandMap[island].pupils++;
+        const validClasses = classNames.filter(c => c.toLowerCase().startsWith(island.toLowerCase()));
+        validClasses.forEach(c => islandMap[island].classes.add(c));
+        if (validClasses.includes(r.class)) {
+          islandMap[island].correct++;
+        } else {
+          islandMap[island].violations++;
+        }
+      });
+      const sibBody = document.querySelector("#siblingTable tbody");
+      Object.entries(islandMap).forEach(([island, d]) => {
+        const ok = d.violations === 0;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${island}</strong></td>
+          <td>${[...d.classes].join(", ") || "—"}</td>
+          <td>${d.pupils}</td>
+          <td>${d.correct}</td>
+          <td>${d.violations}</td>
+          <td>${ok
+            ? '<span class="badge badge-green">✓ All correct</span>'
+            : `<span class="badge badge-red">✗ ${d.violations} violation${d.violations>1?"s":""}</span>`}</td>`;
+        sibBody.appendChild(tr);
+      });
+      if (!Object.keys(islandMap).length) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="6" style="color:var(--text-muted);font-style:italic">No sibling island constraints in this allocation.</td>`;
+        sibBody.appendChild(tr);
+      }
+
+      /* ── 4. Friendship Placement ──────────────────────────── */
+      const friendBody = document.querySelector("#friendshipTable tbody");
+      classNames.forEach(cn => {
+        const d = summary[cn];
+        const placed = (d.friendsOk||0) + (d.friendsNo||0);
+        const p = pct(d.friendsOk, placed);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${cn}</strong></td>
+          <td>${placed}</td>
+          <td>${d.friendsOk || 0}</td>
+          <td>${d.friendsNo || 0}</td>
+          <td>${d.noneListed || 0}</td>
+          <td>${p}</td>
+          <td>${ratingBadge(p)}</td>`;
+        friendBody.appendChild(tr);
+      });
+      const fTotRow = document.createElement("tr");
+      fTotRow.className = "total-row";
+      fTotRow.innerHTML = `
+        <td>OVERALL</td>
+        <td>${totWithFriends}</td>
+        <td>${totFriendOk}</td>
+        <td>${totFriendNo}</td>
+        <td>${totNone}</td>
+        <td>${overallPct}</td>
+        <td>${ratingBadge(overallPct)}</td>`;
+      friendBody.appendChild(fTotRow);
+
+      /* ── 6. Full Pupil Allocation ─────────────────────────── */
+      const allocBody = document.querySelector("#allocationTable tbody");
+      allocations.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${row.pupil || "—"}</td>
+          <td><span class="badge badge-navy">${row.class || "—"}</span></td>
+          <td>${row.gender || "—"}</td>
+          <td>${row.primarySchool || "—"}</td>
+          <td>${row.siblingIsland || "—"}</td>`;
+        allocBody.appendChild(tr);
+      });
+      if (!allocations.length) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="5" style="color:var(--text-muted);font-style:italic">No allocations found.</td>`;
+        allocBody.appendChild(tr);
+      }
     }
-
   </script>
-
 </body>
 </html>
