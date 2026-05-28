@@ -264,6 +264,32 @@ def generate(req: func.HttpRequest) -> func.HttpResponse:
 
             score += school_count * 5
 
+            # FRIEND BONUS
+friends = [
+    pupil["friend1"],
+    pupil["friend2"]
+]
+
+friends = [
+    f for f in friends
+    if f
+]
+
+if friends:
+
+    class_pupil_names = [
+        p["name"]
+        for p in class_data["pupils"]
+    ]
+
+    matching_friends = sum(
+        1 for f in friends
+        if f in class_pupil_names
+    )
+
+    # Reduce score if friends already in class
+    score -= matching_friends * 40
+
             # CLASS SIZE BALANCE
             score += len(class_data["pupils"]) * 3
 
