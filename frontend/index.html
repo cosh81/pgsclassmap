@@ -1,45 +1,125 @@
+```html
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>PGSClassMap</title>
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
-  <main>
-    <h1>PGSClassMap</h1>
-    <p>S1 Class Allocation & Transition Planning</p>
+
+  <header class="topbar">
+    <div>
+      <h1>PGSClassMap</h1>
+      <p>S1 Class Allocation & Transition Planning</p>
+    </div>
+
+    <div class="topbar-badge">
+      Azure Hosted
+    </div>
+  </header>
+
+  <main class="container">
 
     <section class="card">
-      <h2>Upload Pupil List</h2>
+      <h2>Upload Pupil Spreadsheet</h2>
+
       <input type="file" id="pupilFile" accept=".xlsx,.xls">
 
-      <div class="controls">
-        <label>
-          Min class size
-          <input type="number" id="minClassSize" value="28">
-        </label>
+      <div class="button-row">
+        <button class="secondary-btn" onclick="validateFile()">
+          Validate Spreadsheet
+        </button>
 
-        <label>
-          Max class size
-          <input type="number" id="maxClassSize" value="32">
-        </label>
+        <button class="primary-btn" onclick="generateClasses()">
+          Generate Classes
+        </button>
+      </div>
+    </section>
 
-        <label>
-          Max gender percentage
-          <input type="number" id="maxGenderPercent" value="60">
-        </label>
+    <section class="grid-2">
+
+      <div class="card">
+        <h2>Class Configuration</h2>
+
+        <table id="classTable">
+          <thead>
+            <tr>
+              <th>Class</th>
+              <th>Island</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr><td><input value="Mull1"></td><td><input value="Mull"></td></tr>
+            <tr><td><input value="Lewis1"></td><td><input value="Lewis"></td></tr>
+            <tr><td><input value="Lewis2"></td><td><input value="Lewis"></td></tr>
+            <tr><td><input value="Skye1"></td><td><input value="Skye"></td></tr>
+            <tr><td><input value="Skye2"></td><td><input value="Skye"></td></tr>
+            <tr><td><input value="Iona1"></td><td><input value="Iona"></td></tr>
+            <tr><td><input value="Iona2"></td><td><input value="Iona"></td></tr>
+          </tbody>
+        </table>
+
+        <button class="secondary-btn" onclick="addClassRow()">
+          Add Class
+        </button>
+
       </div>
 
-      <button onclick="validateFile()">Validate File</button>
-      <button onclick="generateClasses()">Generate Classes</button>
+      <div class="card">
+        <h2>Constraints</h2>
+
+        <div class="form-group">
+          <label>Minimum Class Size</label>
+          <input type="number" id="minClassSize" value="28">
+        </div>
+
+        <div class="form-group">
+          <label>Maximum Class Size</label>
+          <input type="number" id="maxClassSize" value="32">
+        </div>
+
+        <div class="form-group">
+          <label>Maximum Gender Percentage</label>
+          <input type="number" id="maxGenderPercent" value="60">
+        </div>
+
+        <div class="form-group">
+          <label>Friendship Priority</label>
+          <input type="range" id="friendPriority" min="1" max="10" value="8">
+        </div>
+
+        <div class="form-group">
+          <label>School Spread Priority</label>
+          <input type="range" id="schoolPriority" min="1" max="10" value="6">
+        </div>
+
+      </div>
+
     </section>
 
     <section class="card">
-      <h2>Result</h2>
-      <pre id="result">No action run yet.</pre>
+      <h2>Class Summary</h2>
+
+      <div id="summaryCards" class="summary-grid">
+      </div>
     </section>
+
+    <section class="card">
+      <h2>System Output</h2>
+
+      <pre id="result">
+No action run yet.
+      </pre>
+    </section>
+
   </main>
 
   <script src="app.js"></script>
+
 </body>
 </html>
+```
