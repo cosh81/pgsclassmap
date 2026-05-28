@@ -31,6 +31,7 @@ def json_response(data, status_code=200):
         status_code=status_code
     )
 
+
 def clean_text(value):
     if value is None:
         return ""
@@ -177,6 +178,7 @@ def calculate_friendship_results(allocations):
 
     return results
 
+
 @app.route(route="generate", methods=["POST"])
 def generate(req: func.HttpRequest) -> func.HttpResponse:
     try:
@@ -245,14 +247,12 @@ def generate(req: func.HttpRequest) -> func.HttpResponse:
 
             # SIBLING ISLAND MATCH
             if pupil["sibling_island"]:
-
                 if pupil["sibling_island"] != class_data["island"]:
                     score += 1000
 
             # GENDER BALANCE
             if pupil["gender"] == "m":
                 score += class_data["male"] * 10
-
             elif pupil["gender"] == "f":
                 score += class_data["female"] * 10
 
@@ -265,30 +265,30 @@ def generate(req: func.HttpRequest) -> func.HttpResponse:
             score += school_count * 5
 
             # FRIEND BONUS
-friends = [
-    pupil["friend1"],
-    pupil["friend2"]
-]
+            friends = [
+                pupil["friend1"],
+                pupil["friend2"]
+            ]
 
-friends = [
-    f for f in friends
-    if f
-]
+            friends = [
+                f for f in friends
+                if f
+            ]
 
-if friends:
+            if friends:
 
-    class_pupil_names = [
-        p["name"]
-        for p in class_data["pupils"]
-    ]
+                class_pupil_names = [
+                    p["name"]
+                    for p in class_data["pupils"]
+                ]
 
-    matching_friends = sum(
-        1 for f in friends
-        if f in class_pupil_names
-    )
+                matching_friends = sum(
+                    1 for f in friends
+                    if f in class_pupil_names
+                )
 
-    # Reduce score if friends already in class
-    score -= matching_friends * 40
+                # Reduce score if friends already in class
+                score -= matching_friends * 40
 
             # CLASS SIZE BALANCE
             score += len(class_data["pupils"]) * 3
@@ -374,12 +374,12 @@ if friends:
             }
 
         return json_response({
-    "status": "success",
-    "message": "Allocation generated successfully.",
-    "summary": class_summary,
-    "friendshipSummary": friendship_summary,
-    "allocations": allocations
-})
+            "status": "success",
+            "message": "Allocation generated successfully.",
+            "summary": class_summary,
+            "friendshipSummary": friendship_summary,
+            "allocations": allocations
+        })
 
     except Exception as e:
         return json_response({
