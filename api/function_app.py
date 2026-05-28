@@ -128,6 +128,55 @@ def validate(req: func.HttpRequest) -> func.HttpResponse:
         }, 500)
 
 
+def calculate_friendship_results(allocations):
+    pupil_to_class = {
+        clean_text(a["pupil"]): a["class"]
+        for a in allocations
+    }
+
+    results = {}
+
+    for allocation in allocations:
+        class_name = allocation["class"]
+
+        if class_name not in results:
+            results[class_name] = {
+                "withFriends": 0,
+                "friendsOk": 0,
+                "friendsNo": 0,
+                "noneListed": 0
+            }
+
+        pupil_class = allocation["class"]
+
+        friends = [
+            clean_text(allocation.get("friend1", "")),
+            clean_text(allocation.get("friend2", ""))
+        ]
+
+        friends = [
+            f for f in friends
+            if f and f in pupil_to_class
+        ]
+
+        if not friends:
+            results[class_name]["noneListed"] += 1
+            continue
+
+        results[class_name]["withFriends"] += 1
+
+        friend_in_same_class = any(
+            pupil_to_class[f] == pupil_class
+            for f in friends
+        )
+
+        if friend_in_same_class:
+            results[class_name]["friendsOk"] += 1
+        else:
+            results[class_name]["friendsNo"] += 1
+
+    return results
+
 @app.route(route="generate", methods=["POST"])
 def generate(req: func.HttpRequest) -> func.HttpResponse:
     try:
@@ -281,6 +330,8 @@ def generate(req: func.HttpRequest) -> func.HttpResponse:
                 "friend2": pupil["friend2"].title()
             })
 
+        friendship_summary = calculate_friendship_results(allocations)
+
         # -----------------------------
         # SUMMARY
         # -----------------------------
@@ -297,11 +348,12 @@ def generate(req: func.HttpRequest) -> func.HttpResponse:
             }
 
         return json_response({
-            "status": "success",
-            "message": "Allocation generated successfully.",
-            "summary": class_summary,
-            "allocations": allocations
-        })
+    "status": "success",
+    "message": "Allocation generated successfully.",
+    "summary": class_summary,
+    "friendshipSummary": friendship_summary,
+    "allocations": allocations
+})
 
     except Exception as e:
         return json_response({
