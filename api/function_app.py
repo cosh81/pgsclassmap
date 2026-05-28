@@ -31,6 +31,35 @@ def json_response(data, status_code=200):
         status_code=status_code
     )
 
+def clean_text(value):
+    if value is None:
+        return ""
+
+    return " ".join(
+        str(value)
+        .replace("\n", " ")
+        .replace("\t", " ")
+        .strip()
+        .split()
+    ).lower()
+
+
+def display_text(value):
+    if value is None:
+        return ""
+
+    return " ".join(
+        str(value)
+        .replace("\n", " ")
+        .replace("\t", " ")
+        .strip()
+        .split()
+    )
+
+
+def get_island(class_name):
+    return ''.join([c for c in class_name if not c.isdigit()]).lower()
+
 
 def read_and_map_excel(req):
     uploaded_file = req.files.get("file")
@@ -108,42 +137,170 @@ def generate(req: func.HttpRequest) -> func.HttpResponse:
         gender_col = mapped_columns["Gender"]
         school_col = mapped_columns["Primary School"]
         sibling_col = mapped_columns["Sibling Island"]
+        friend1_col = mapped_columns["Friend 1"]
+        friend2_col = mapped_columns["Friend 2"]
 
-        allocations = []
-        class_summary = {class_name: {"total": 0, "male": 0, "female": 0, "schools": {}} for class_name in CLASSES}
+        pupils = []
 
-        for index, row in df.iterrows():
-            class_name = CLASSES[index % len(CLASSES)]
+        # -----------------------------
+        # NORMALISE PUPIL DATA
+        # -----------------------------
 
-            gender = str(row[gender_col]).strip().upper()
-            school = str(row[school_col]).strip()
+        for _, row in df.iterrows():
 
-            allocation = {
-                "pupil": str(row[pupil_col]).strip(),
-                "class": class_name,
-                "gender": gender,
-                "primarySchool": school,
-                "siblingIsland": str(row[sibling_col]).strip()
+            display_name = display_text(row[pupil_col])
+
+            pupil = {
+                "display_name": display_name,
+                "name": clean_text(display_name),
+
+                "gender": clean_text(row[gender_col]),
+                "school": clean_text(row[school_col]),
+                "sibling_island": clean_text(row[sibling_col]),
+
+                "friend1": clean_text(row[friend1_col]),
+                "friend2": clean_text(row[friend2_col]),
             }
 
-            allocations.append(allocation)
+            pupils.append(pupil)
 
-            class_summary[class_name]["total"] += 1
+        # -----------------------------
+        # CLASS MODEL
+        # -----------------------------
 
-            if gender == "M":
-                class_summary[class_name]["male"] += 1
-            elif gender == "F":
-                class_summary[class_name]["female"] += 1
+        classes = {}
 
-            if school:
-                class_summary[class_name]["schools"][school] = class_summary[class_name]["schools"].get(school, 0) + 1
+        for class_name in CLASSES:
+            classes[class_name] = {
+                "name": class_name,
+                "island": get_island(class_name),
+                "pupils": [],
+                "male": 0,
+                "female": 0,
+                "schools": {}
+            }
+
+        max_class_size = max(1, round(len(pupils) / len(CLASSES)))
+
+        # -----------------------------
+        # SCORING FUNCTION
+        # -----------------------------
+
+        def calculate_score(pupil, class_data):
+
+            score = 0
+
+            # HARD LIMITS
+            if len(class_data["pupils"]) >= max_class_size:
+                score += 1000
+
+            # SIBLING ISLAND MATCH
+            if pupil["sibling_island"]:
+
+                if pupil["sibling_island"] != class_data["island"]:
+                    score += 1000
+
+            # GENDER BALANCE
+            if pupil["gender"] == "m":
+                score += class_data["male"] * 10
+
+            elif pupil["gender"] == "f":
+                score += class_data["female"] * 10
+
+            # SCHOOL CLUSTERING
+            school_count = class_data["schools"].get(
+                pupil["school"],
+                0
+            )
+
+            score += school_count * 5
+
+            # CLASS SIZE BALANCE
+            score += len(class_data["pupils"]) * 3
+
+            return score
+
+        # -----------------------------
+        # SORT CONSTRAINED PUPILS FIRST
+        # -----------------------------
+
+        pupils.sort(
+            key=lambda p: (
+                0 if p["sibling_island"] else 1
+            )
+        )
+
+        allocations = []
+
+        # -----------------------------
+        # ALLOCATE
+        # -----------------------------
+
+        for pupil in pupils:
+
+            best_class = None
+            best_score = None
+
+            for class_name, class_data in classes.items():
+
+                score = calculate_score(
+                    pupil,
+                    class_data
+                )
+
+                if best_score is None or score < best_score:
+                    best_score = score
+                    best_class = class_name
+
+            class_data = classes[best_class]
+
+            class_data["pupils"].append(pupil)
+
+            if pupil["gender"] == "m":
+                class_data["male"] += 1
+
+            elif pupil["gender"] == "f":
+                class_data["female"] += 1
+
+            if pupil["school"]:
+
+                class_data["schools"][pupil["school"]] = (
+                    class_data["schools"].get(
+                        pupil["school"],
+                        0
+                    ) + 1
+                )
+
+            allocations.append({
+                "pupil": pupil["display_name"],
+                "class": best_class,
+                "gender": pupil["gender"].upper(),
+                "primarySchool": pupil["school"].title(),
+                "siblingIsland": pupil["sibling_island"].title(),
+                "friend1": pupil["friend1"].title(),
+                "friend2": pupil["friend2"].title()
+            })
+
+        # -----------------------------
+        # SUMMARY
+        # -----------------------------
+
+        class_summary = {}
+
+        for class_name, class_data in classes.items():
+
+            class_summary[class_name] = {
+                "total": len(class_data["pupils"]),
+                "male": class_data["male"],
+                "female": class_data["female"],
+                "schools": class_data["schools"]
+            }
 
         return json_response({
             "status": "success",
-            "message": "Dummy class allocation generated successfully.",
-            "note": "This is not the optimiser yet. It simply spreads pupils evenly across classes to prove the generate workflow.",
+            "message": "Allocation generated successfully.",
             "summary": class_summary,
-            "allocations": allocations[:20]
+            "allocations": allocations
         })
 
     except Exception as e:
