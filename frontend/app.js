@@ -13,7 +13,7 @@ async function validateFile() {
   result.textContent = "Validating...";
 
   try {
-    const response = await fetch("http://localhost:7071/api/validate", {
+    const response = await fetch("/api/validate", {
       method: "POST",
       body: formData
     });
