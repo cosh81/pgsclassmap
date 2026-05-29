@@ -211,6 +211,46 @@
     }
     .outline-btn:hover { background: var(--navy-light); }
 
+
+    /* ── Class breakdown ── */
+    .class-breakdown {
+      display: grid;
+      gap: 18px;
+    }
+    .class-block {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--surface);
+    }
+    .class-block-header {
+      background: var(--navy-light);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .class-block-header h3 {
+      margin: 0;
+      font-size: 15px;
+      color: var(--navy);
+    }
+    .class-block-header span {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .friend-list {
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .status-cell {
+      white-space: nowrap;
+    }
+
     @media print {
       .topbar, .page-actions { display: none; }
       .card { box-shadow: none; break-inside: avoid; }
@@ -348,24 +388,13 @@
       </div>
     </section>
 
-    <!-- 5. Full Pupil Allocation -->
+    <!-- 5. Class Breakdown -->
     <section class="card">
       <div class="section-header">
-        <h2><span class="section-num">5</span>Full Pupil Allocation</h2>
+        <h2><span class="section-num">5</span>Class Breakdown</h2>
       </div>
-      <div class="table-wrap">
-        <table class="sum-table" id="allocationTable">
-          <thead>
-            <tr>
-              <th>Pupil</th>
-              <th>Class</th>
-              <th>Gender</th>
-              <th>Primary School</th>
-              <th>Sibling Island</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+      <div id="classBreakdownContainer" class="class-breakdown">
+        <!-- populated by JS -->
       </div>
     </section>
 
@@ -418,6 +447,50 @@
       }
       function hasSiblingIsland(row) {
         return row.siblingIsland && row.siblingIsland !== "—";
+      }
+      function cleanName(value) {
+        return String(value || "")
+          .replace(/\n/g, " ")
+          .replace(/\t/g, " ")
+          .trim()
+          .split(/\s+/)
+          .join(" ")
+          .toLowerCase();
+      }
+      function getFriends(row) {
+        return [row.friend1, row.friend2]
+          .map(f => String(f || "").trim())
+          .filter(f => f && f !== "—");
+      }
+      function friendStatusBadge(row, pupilClassMap) {
+        const friends = getFriends(row);
+
+        if (!friends.length) {
+          return '<span class="badge badge-navy">—</span>';
+        }
+
+        const sameClassFriends = friends.filter(friend =>
+          pupilClassMap[cleanName(friend)] === row.class
+        );
+
+        if (sameClassFriends.length) {
+          return `<span class="badge badge-green">✓ ${sameClassFriends.join(", ")}</span>`;
+        }
+
+        return '<span class="badge badge-red">✗ No friends placed</span>';
+      }
+      function siblingStatusBadge(row) {
+        if (!hasSiblingIsland(row)) {
+          return '<span class="badge badge-navy">—</span>';
+        }
+
+        const ok = String(row.class || "")
+          .toLowerCase()
+          .startsWith(String(row.siblingIsland || "").toLowerCase());
+
+        return ok
+          ? '<span class="badge badge-green">✓ Correct island</span>'
+          : '<span class="badge badge-red">✗ Wrong island</span>';
       }
 
       /* ── Totals ───────────────────────────────────────────── */
@@ -611,22 +684,64 @@
         <td>${ratingBadge(overallPct)}</td>`;
       friendBody.appendChild(fTotRow);
 
-      /* ── 5. Full Pupil Allocation ─────────────────────────── */
-      const allocBody = document.querySelector("#allocationTable tbody");
+      /* ── 5. Class Breakdown ───────────────────────────────── */
+      const classBreakdownContainer = document.getElementById("classBreakdownContainer");
+
+      const pupilClassMap = {};
       allocations.forEach(row => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${row.pupil || "—"}</td>
-          <td><span class="badge badge-navy">${row.class || "—"}</span></td>
-          <td>${row.gender || "—"}</td>
-          <td>${row.primarySchool || "—"}</td>
-          <td>${row.siblingIsland || "—"}</td>`;
-        allocBody.appendChild(tr);
+        pupilClassMap[cleanName(row.pupil)] = row.class;
       });
+
       if (!allocations.length) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td colspan="5" style="color:var(--text-muted);font-style:italic">No allocations found.</td>`;
-        allocBody.appendChild(tr);
+        classBreakdownContainer.innerHTML =
+          `<div style="color:var(--text-muted);font-style:italic">No allocations found.</div>`;
+      } else {
+        classNames.forEach(cn => {
+          const classRows = allocations
+            .filter(row => row.class === cn)
+            .sort((a, b) => String(a.pupil || "").localeCompare(String(b.pupil || "")));
+
+          const block = document.createElement("div");
+          block.className = "class-block";
+
+          block.innerHTML = `
+            <div class="class-block-header">
+              <h3>${cn}</h3>
+              <span>${classRows.length} pupil${classRows.length === 1 ? "" : "s"}</span>
+            </div>
+            <div class="table-wrap">
+              <table class="sum-table">
+                <thead>
+                  <tr>
+                    <th>Pupil</th>
+                    <th>Gender</th>
+                    <th>Primary School</th>
+                    <th>Sibling Island</th>
+                    <th>Sibling Status</th>
+                    <th>Friends Listed</th>
+                    <th>Friend Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${classRows.map(row => {
+                    const friends = getFriends(row);
+                    return `
+                      <tr>
+                        <td><strong>${row.pupil || "—"}</strong></td>
+                        <td>${row.gender || "—"}</td>
+                        <td>${row.primarySchool || "—"}</td>
+                        <td>${hasSiblingIsland(row) ? row.siblingIsland : "—"}</td>
+                        <td class="status-cell">${siblingStatusBadge(row)}</td>
+                        <td><span class="friend-list">${friends.length ? friends.join("<br>") : "—"}</span></td>
+                        <td class="status-cell">${friendStatusBadge(row, pupilClassMap)}</td>
+                      </tr>`;
+                  }).join("")}
+                </tbody>
+              </table>
+            </div>`;
+
+          classBreakdownContainer.appendChild(block);
+        });
       }
     }
   </script>
