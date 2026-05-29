@@ -14,7 +14,7 @@ COLUMN_ALIASES = {
     "Friend 2": ["Friend 2", "Friend2"]
 }
 
-CLASSES = ["Mull1", "Lewis1", "Lewis2", "Skye1", "Skye2", "Iona1", "Iona2"]
+DEFAULT_CLASSES = ["Mull1", "Lewis1", "Lewis2", "Skye1", "Skye2", "Iona1", "Iona2"]
 
 
 def find_column(df_columns, possible_names):
@@ -94,33 +94,45 @@ def read_and_map_excel(req):
     return df, columns, mapped_columns
 
 
+def read_class_config(req):
+    class_config_raw = req.form.get("classConfig", "[]")
+
+    try:
+        class_config = json.loads(class_config_raw)
+    except Exception:
+        class_config = []
+
+    configured_classes = []
+
+    for item in class_config:
+        class_name = display_text(item.get("className", ""))
+        island = clean_text(item.get("island", ""))
+
+        if not class_name:
+            continue
+
+        configured_classes.append({
+            "name": class_name,
+            "island": island or get_island(class_name)
+        })
+
+    if not configured_classes:
+        # Fallback keeps validate/generate usable if older frontend sends no classConfig.
+        configured_classes = [
+            {
+                "name": class_name,
+                "island": get_island(class_name)
+            }
+            for class_name in DEFAULT_CLASSES
+        ]
+
+    return configured_classes
+
+
 @app.route(route="validate", methods=["POST"])
 def validate(req: func.HttpRequest) -> func.HttpResponse:
     try:
         df, columns, mapped_columns = read_and_map_excel(req)
-
-        class_config_raw = req.form.get("classConfig", "[]")
-class_config = json.loads(class_config_raw)
-
-if not class_config:
-    raise ValueError("No class configuration supplied.")
-
-configured_classes = []
-
-for item in class_config:
-    class_name = display_text(item.get("className", ""))
-    island = clean_text(item.get("island", ""))
-
-    if not class_name:
-        continue
-
-    configured_classes.append({
-        "name": class_name,
-        "island": island or get_island(class_name)
-    })
-
-if not configured_classes:
-    raise ValueError("No valid classes supplied.")
 
         response = {
             "status": "success",
@@ -206,6 +218,7 @@ def calculate_friendship_results(allocations):
 def generate(req: func.HttpRequest) -> func.HttpResponse:
     try:
         df, columns, mapped_columns = read_and_map_excel(req)
+        configured_classes = read_class_config(req)
 
         pupil_col = mapped_columns["Pupil Name"]
         gender_col = mapped_columns["Gender"]
@@ -221,17 +234,14 @@ def generate(req: func.HttpRequest) -> func.HttpResponse:
         # -----------------------------
 
         for _, row in df.iterrows():
-
             display_name = display_text(row[pupil_col])
 
             pupil = {
                 "display_name": display_name,
                 "name": clean_text(display_name),
-
                 "gender": clean_text(row[gender_col]),
                 "school": clean_text(row[school_col]),
                 "sibling_island": clean_text(row[sibling_col]),
-
                 "friend1": clean_text(row[friend1_col]),
                 "friend2": clean_text(row[friend2_col]),
             }
@@ -245,11 +255,11 @@ def generate(req: func.HttpRequest) -> func.HttpResponse:
         classes = {}
 
         for class_item in configured_classes:
-    class_name = class_item["name"]
+            class_name = class_item["name"]
 
-    classes[class_name] = {
-        "name": class_name,
-        "island": class_item["island"],
+            classes[class_name] = {
+                "name": class_name,
+                "island": class_item["island"],
                 "pupils": [],
                 "male": 0,
                 "female": 0,
@@ -263,7 +273,6 @@ def generate(req: func.HttpRequest) -> func.HttpResponse:
         # -----------------------------
 
         def calculate_score(pupil, class_data):
-
             score = 0
 
             # HARD LIMITS
@@ -274,6 +283,31 @@ def generate(req: func.HttpRequest) -> func.HttpResponse:
             if pupil["sibling_island"]:
                 if pupil["sibling_island"] != class_data["island"]:
                     score += 1000
+
+            # FRIEND BONUS
+            friends = [
+                pupil["friend1"],
+                pupil["friend2"]
+            ]
+
+            friends = [
+                f for f in friends
+                if f
+            ]
+
+            if friends:
+                class_pupil_names = [
+                    p["name"]
+                    for p in class_data["pupils"]
+                ]
+
+                matching_friends = sum(
+                    1 for f in friends
+                    if f in class_pupil_names
+                )
+
+                # Reduce score if friends already in class.
+                score -= matching_friends * 40
 
             # GENDER BALANCE
             if pupil["gender"] == "m":
@@ -289,32 +323,6 @@ def generate(req: func.HttpRequest) -> func.HttpResponse:
 
             score += school_count * 5
 
-            # FRIEND BONUS
-            friends = [
-                pupil["friend1"],
-                pupil["friend2"]
-            ]
-
-            friends = [
-                f for f in friends
-                if f
-            ]
-
-            if friends:
-
-                class_pupil_names = [
-                    p["name"]
-                    for p in class_data["pupils"]
-                ]
-
-                matching_friends = sum(
-                    1 for f in friends
-                    if f in class_pupil_names
-                )
-
-                # Reduce score if friends already in class
-                score -= matching_friends * 40
-
             # CLASS SIZE BALANCE
             score += len(class_data["pupils"]) * 3
 
@@ -326,7 +334,10 @@ def generate(req: func.HttpRequest) -> func.HttpResponse:
 
         pupils.sort(
             key=lambda p: (
-                0 if p["sibling_island"] else 1
+                0 if p["sibling_island"] else 1,
+                0 if p["friend1"] or p["friend2"] else 1,
+                p["school"],
+                p["display_name"]
             )
         )
 
@@ -337,12 +348,10 @@ def generate(req: func.HttpRequest) -> func.HttpResponse:
         # -----------------------------
 
         for pupil in pupils:
-
             best_class = None
             best_score = None
 
             for class_name, class_data in classes.items():
-
                 score = calculate_score(
                     pupil,
                     class_data
@@ -353,17 +362,14 @@ def generate(req: func.HttpRequest) -> func.HttpResponse:
                     best_class = class_name
 
             class_data = classes[best_class]
-
             class_data["pupils"].append(pupil)
 
             if pupil["gender"] == "m":
                 class_data["male"] += 1
-
             elif pupil["gender"] == "f":
                 class_data["female"] += 1
 
             if pupil["school"]:
-
                 class_data["schools"][pupil["school"]] = (
                     class_data["schools"].get(
                         pupil["school"],
@@ -390,17 +396,18 @@ def generate(req: func.HttpRequest) -> func.HttpResponse:
         class_summary = {}
 
         for class_name, class_data in classes.items():
-
             class_summary[class_name] = {
                 "total": len(class_data["pupils"]),
                 "male": class_data["male"],
                 "female": class_data["female"],
-                "schools": class_data["schools"]
+                "schools": class_data["schools"],
+                "island": class_data["island"].title()
             }
 
         return json_response({
             "status": "success",
             "message": "Allocation generated successfully.",
+            "classesUsed": configured_classes,
             "summary": class_summary,
             "friendshipSummary": friendship_summary,
             "allocations": allocations
