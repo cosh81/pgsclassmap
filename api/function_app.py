@@ -99,6 +99,29 @@ def validate(req: func.HttpRequest) -> func.HttpResponse:
     try:
         df, columns, mapped_columns = read_and_map_excel(req)
 
+        class_config_raw = req.form.get("classConfig", "[]")
+class_config = json.loads(class_config_raw)
+
+if not class_config:
+    raise ValueError("No class configuration supplied.")
+
+configured_classes = []
+
+for item in class_config:
+    class_name = display_text(item.get("className", ""))
+    island = clean_text(item.get("island", ""))
+
+    if not class_name:
+        continue
+
+    configured_classes.append({
+        "name": class_name,
+        "island": island or get_island(class_name)
+    })
+
+if not configured_classes:
+    raise ValueError("No valid classes supplied.")
+
         response = {
             "status": "success",
             "message": "File validated successfully.",
@@ -221,17 +244,19 @@ def generate(req: func.HttpRequest) -> func.HttpResponse:
 
         classes = {}
 
-        for class_name in CLASSES:
-            classes[class_name] = {
-                "name": class_name,
-                "island": get_island(class_name),
+        for class_item in configured_classes:
+    class_name = class_item["name"]
+
+    classes[class_name] = {
+        "name": class_name,
+        "island": class_item["island"],
                 "pupils": [],
                 "male": 0,
                 "female": 0,
                 "schools": {}
             }
 
-        max_class_size = max(1, round(len(pupils) / len(CLASSES)))
+        max_class_size = max(1, -(-len(pupils) // len(configured_classes)))
 
         # -----------------------------
         # SCORING FUNCTION
